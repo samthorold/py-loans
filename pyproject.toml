@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "mortgage"
+name = "py_loan"
 version = "0.1.0"
 description = ""
 authors = ["Sam Thorold <sam.thorold@gmail.com>"]
@@ -13,10 +13,29 @@ dash = "^2.11.1"
 pydantic = "^2.0.3"
 
 [tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = "^23.7.0"}
+black = { extras = ["jupyter"], version = "^23.7.0" }
 mypy = "^1.4.1"
 pytest-cov = "^4.1.0"
+rich = { extras = ["all"], version = "^13.4.2" }
+flake8 = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+
+[tool.coverage.run]
+parallel = true
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "class .*\\bProtocol\\):",
+    "def __repr__",
+    "def __str__",
+]

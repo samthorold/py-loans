@@ -5,18 +5,27 @@
 |     0|            100|         5|        7|           98|
 |     1|             98|         5|        7|           96|
 
+Whatever the interest rate process is believed to be at the outset of the
+loan, this will change after the fixed interest period because the variable
+interest rate is random.
+
+Recalculate the flat payment every time the interest rate process experience
+is different from expected.
+
 """
 
 from __future__ import annotations
 from collections import Counter
-from typing import Callable, Iterable
+from typing import Callable, Iterator
 
 from pydantic_core.core_schema import FieldValidationInfo
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, field_validator
 
+from py_loans.process import ConstantValue, Process
 
-class LoanMonth(BaseModel):
+
+class LoanPeriod(BaseModel):
     time_step: NonNegativeInt
     start_value: NonNegativeFloat
     interest: NonNegativeFloat
@@ -37,21 +46,28 @@ class LoanMonth(BaseModel):
 class FlatPayment(BaseModel):
     payment: NonNegativeFloat
     total: NonNegativeFloat
+    repayment: list[LoanPeriod]
+
+    @field_validator("repayment")
+    def validate_repayment(cls, v: list[LoanPeriod]) -> list[LoanPeriod]:
+        if not v:
+            raise ValueError("Must provide at least one LoanPeriod")
+        return v
 
 
 def loan(
     start_value: NonNegativeFloat,
-    interest_rate_process: Callable[[NonNegativeInt], float],
-    payment_process: Callable[[NonNegativeInt], float],
+    interest_rate_process: Process,
+    payment_process: Process,
     time_step: NonNegativeInt = 0,
     repayment_period: NonNegativeInt = 25,
-) -> Iterable[LoanMonth]:
+) -> Iterator[LoanPeriod]:
     while True:
-        month = LoanMonth(
+        month = LoanPeriod(
             time_step=time_step,
             start_value=start_value,
-            interest=start_value * interest_rate_process(time_step),
-            payment=payment_process(time_step),
+            interest=start_value * interest_rate_process.step(time_step),
+            payment=payment_process.step(time_step),
         )
         yield month
 
@@ -67,43 +83,32 @@ def loan(
 
 def find_flat_payment(
     start_value: NonNegativeFloat,
-    interest_rate_process: Callable[[NonNegativeInt], float],
+    interest_rate_process: Process,
     time_step: NonNegativeInt = 0,
     repayment_period: NonNegativeInt = 25,
     payment: NonNegativeFloat = 0,
+    increment: float | None = None,
 ):
+    increment = 25 if increment is None else increment
+
     while True:
         loan_gen = loan(
             start_value=start_value,
             interest_rate_process=interest_rate_process,
-            payment_process=lambda t: payment,
+            payment_process=ConstantValue(value=payment),
             time_step=time_step,
             repayment_period=repayment_period,
         )
+
         repayment = list(loan_gen)
 
-        yield repayment
+        yield FlatPayment(
+            payment=Counter(m.payment for m in repayment).most_common(1)[0][0],
+            total=sum(m.payment for m in repayment),
+            repayment=repayment,
+        )
 
         if not repayment[-1].end_value:
             break
 
-        payment = repayment[-2].payment + 250
-
-
-def summary_flat_payment(
-    start_value: NonNegativeFloat,
-    interest_rate_process: Callable[[NonNegativeInt], float],
-    time_step: NonNegativeInt = 0,
-    repayment_period: NonNegativeInt = 25,
-    payment: NonNegativeFloat = 0,
-):
-    fl = find_flat_payment(
-        start_value=start_value,
-        interest_rate_process=interest_rate_process,
-        repayment_period=repayment_period,
-    )
-    repayment = list(fl)[-1]
-    return FlatPayment(
-        payment=Counter(m.payment for m in repayment).most_common(1)[0][0],
-        total=sum(m.payment for m in repayment),
-    )
+        payment = repayment[-2].payment + increment
