@@ -16,7 +16,7 @@ is different from expected.
 
 from __future__ import annotations
 from collections import Counter
-from typing import Callable, Iterator
+from typing import Iterator
 
 from pydantic_core.core_schema import FieldValidationInfo
 
@@ -32,11 +32,12 @@ class LoanPeriod(BaseModel):
     payment: NonNegativeFloat
 
     @field_validator("payment")
-    def validate_payment_amount(cls, v, info: FieldValidationInfo) -> NonNegativeFloat:
-        return min(
-            max(v, info.data["interest"]),
-            info.data["start_value"] + info.data["interest"],
-        )
+    def validate_payment_amount(
+        cls, v: NonNegativeFloat, info: FieldValidationInfo
+    ) -> NonNegativeFloat:
+        start_value: NonNegativeFloat = info.data["start_value"]
+        interest: NonNegativeFloat = info.data["interest"]
+        return min(max(v, interest), start_value + interest)
 
     @property
     def end_value(self) -> NonNegativeFloat:
@@ -88,7 +89,7 @@ def find_flat_payment(
     repayment_period: NonNegativeInt = 25,
     payment: NonNegativeFloat = 0,
     increment: float | None = None,
-):
+) -> Iterator[FlatPayment]:
     increment = 25 if increment is None else increment
 
     while True:
