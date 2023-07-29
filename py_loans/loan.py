@@ -15,14 +15,14 @@ is different from expected.
 """
 
 from __future__ import annotations
-from typing import Any, Iterator
+from typing import Iterator
 
 from pydantic_core.core_schema import FieldValidationInfo
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, field_validator
 
 from py_loans.process import ConstantValue, Process
-from py_loans.roots import RootNotFound, bisect
+from py_loans.roots import bisect
 
 
 class LoanPeriod(BaseModel):
@@ -59,10 +59,7 @@ def loan(
         )
         yield month
 
-        loan_repaid = not month.end_value
-        loan_mature = month.time_step >= (repayment_period - 1)
-
-        if loan_repaid or loan_mature:
+        if month.time_step >= (repayment_period - 1):
             break
 
         time_step = time_step + 1
@@ -74,7 +71,7 @@ def find_flat_payment(
     interest_rate_process: Process,
     time_step: NonNegativeInt = 0,
     repayment_period: NonNegativeInt = 25,
-    **kwargs: Any,
+    tol: float = 5,
 ) -> float:
     def objective_func(flat_payment: float) -> float:
         loan_gen = loan(
@@ -84,11 +81,12 @@ def find_flat_payment(
             time_step=time_step,
             repayment_period=repayment_period,
         )
-        return list(loan_gen)[-1].end_value
+        repayment = list(loan_gen)
+        return repayment[-1].end_value
 
-    try:
-        root = bisect(objective_func, **kwargs)
-    except RootNotFound as e:
-        raise ValueError("Could not find flat payment.") from e
+    root = bisect(objective_func, a=0, b=start_value, tol=tol)
+
+    if not root.converged:
+        raise ValueError(f"Could not find payment. {root}")
 
     return root.value

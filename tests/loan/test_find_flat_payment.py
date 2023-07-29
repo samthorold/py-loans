@@ -18,8 +18,6 @@ def test_find_flat_payment(
         interest_rate_process=interest_rate_process,
         time_step=time_step,
         repayment_period=repayment_period,
-        a=0,
-        b=100_000,
         tol=tol,
     )
 
@@ -30,15 +28,11 @@ def test_find_flat_payment_does_not_converge() -> None:
     start_value = 10000
     interest_rate_process = ConstantValue(value=0.05)
     time_step = 0
-    tol = 5
     with pytest.raises(ValueError):
         find_flat_payment(
             start_value=start_value,
             interest_rate_process=interest_rate_process,
             time_step=time_step,
             repayment_period=25,
-            a=0,
-            b=100_000,
-            tol=tol,
-            max_iterations=2,
+            tol=1e-26,
         )

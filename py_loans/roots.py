@@ -3,10 +3,6 @@ from typing import Callable
 from pydantic import BaseModel
 
 
-class RootNotFound(Exception):
-    """No root found within the permitted iterations."""
-
-
 class Root(BaseModel):
     value: float
     iterations: int
@@ -52,6 +48,4 @@ def bisect(
 
         iteration += 1
 
-    raise RootNotFound(
-        f"No solution found. {a=} {b=} {tol=} {iteration=} {max_iterations=}"
-    )
+    return Root(value=(a + b) / 2, iterations=iteration, converged=False, tol=tol)
