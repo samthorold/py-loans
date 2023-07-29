@@ -16,44 +16,32 @@ is different from expected.
 
 from __future__ import annotations
 from collections import Counter
-from typing import Iterator
+from typing import Any, Iterator
 
 from pydantic_core.core_schema import FieldValidationInfo
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, field_validator
 
 from py_loans.process import ConstantValue, Process
+from py_loans.roots import bisect
 
 
 class LoanPeriod(BaseModel):
     time_step: NonNegativeInt
-    start_value: NonNegativeFloat
-    interest: NonNegativeFloat
+    start_value: float
+    interest: float
     payment: NonNegativeFloat
 
     @field_validator("payment")
     def validate_payment_amount(
         cls, v: NonNegativeFloat, info: FieldValidationInfo
     ) -> NonNegativeFloat:
-        start_value: NonNegativeFloat = info.data["start_value"]
         interest: NonNegativeFloat = info.data["interest"]
-        return min(max(v, interest), start_value + interest)
+        return max(v, interest)
 
     @property
     def end_value(self) -> NonNegativeFloat:
-        return max(0.0, self.start_value + self.interest - self.payment)
-
-
-class FlatPayment(BaseModel):
-    payment: NonNegativeFloat
-    total: NonNegativeFloat
-    repayment: list[LoanPeriod]
-
-    @field_validator("repayment")
-    def validate_repayment(cls, v: list[LoanPeriod]) -> list[LoanPeriod]:
-        if not v:
-            raise ValueError("Must provide at least one LoanPeriod")
-        return v
+        return self.start_value + self.interest - self.payment
 
 
 def loan(
@@ -87,29 +75,20 @@ def find_flat_payment(
     interest_rate_process: Process,
     time_step: NonNegativeInt = 0,
     repayment_period: NonNegativeInt = 25,
-    payment: NonNegativeFloat = 0,
-    increment: float | None = None,
-) -> Iterator[FlatPayment]:
-    increment = 25 if increment is None else increment
-
-    while True:
+    **kwargs: Any,
+) -> float:
+    def objective_func(flat_payment: float) -> float:
         loan_gen = loan(
             start_value=start_value,
             interest_rate_process=interest_rate_process,
-            payment_process=ConstantValue(value=payment),
+            payment_process=ConstantValue(value=flat_payment),
             time_step=time_step,
             repayment_period=repayment_period,
         )
+        return list(loan_gen)[-1].end_value
 
-        repayment = list(loan_gen)
+    root = bisect(objective_func, **kwargs)
+    if not root.converged:
+        raise ValueError(f"Could not find flat payment. {root}")
 
-        yield FlatPayment(
-            payment=Counter(m.payment for m in repayment).most_common(1)[0][0],
-            total=sum(m.payment for m in repayment),
-            repayment=repayment,
-        )
-
-        if not repayment[-1].end_value:
-            break
-
-        payment = repayment[-2].payment + increment
+    return root.value

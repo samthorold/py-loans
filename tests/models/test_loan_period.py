@@ -24,7 +24,7 @@ def test_loan_period_end_value() -> None:
     (
         (100, 5, 7, 7),
         (100, 5, 4, 5),
-        (1, 1, 4, 2),
+        (1, 1, 4, 4),
     ),
 )
 def test_loan_period_payment(
