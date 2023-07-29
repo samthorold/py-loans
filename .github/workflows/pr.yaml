@@ -1,0 +1,25 @@
+---
+name: PR
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  FORCE_COLOR: "1" # Make tools pretty.
+
+jobs:
+  pr-code-checks:
+    name: PR Code Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+      - run: curl -sSL https://install.python-poetry.org | python3 - --version 1.5.1
+      - run: poetry install
+      - run: make fmt-check
+      - run: make type-check
+      - run: make test-coverage

@@ -7,7 +7,7 @@ watch-test:
 test-coverage:
 	poetry run coverage run -m pytest
 	poetry run coverage combine
-	poetry run coverage report -m --skip-covered
+	poetry run coverage report -m
 
 type-check:
 	poetry run python -m mypy py_loans tests
