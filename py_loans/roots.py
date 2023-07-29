@@ -3,6 +3,10 @@ from typing import Callable
 from pydantic import BaseModel
 
 
+class RootNotFound(Exception):
+    """No root found within the permitted iterations."""
+
+
 class Root(BaseModel):
     value: float
     iterations: int
@@ -11,6 +15,16 @@ class Root(BaseModel):
 
 
 def same_sign(a: float, b: float) -> bool:
+    """
+    Examples:
+
+    >>> same_sign(1, 1)
+    True
+    >>> same_sign(1, -1)
+    False
+    >>> same_sign(-1, -1)
+    True
+    """
     if a > 0 and b > 0:
         return True
     if a < 0 and b < 0:
@@ -38,6 +52,6 @@ def bisect(
 
         iteration += 1
 
-    raise ValueError(
+    raise RootNotFound(
         f"No solution found. {a=} {b=} {tol=} {iteration=} {max_iterations=}"
     )

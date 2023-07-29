@@ -23,7 +23,7 @@ from pydantic_core.core_schema import FieldValidationInfo
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, field_validator
 
 from py_loans.process import ConstantValue, Process
-from py_loans.roots import bisect
+from py_loans.roots import RootNotFound, bisect
 
 
 class LoanPeriod(BaseModel):
@@ -87,8 +87,9 @@ def find_flat_payment(
         )
         return list(loan_gen)[-1].end_value
 
-    root = bisect(objective_func, **kwargs)
-    if not root.converged:
-        raise ValueError(f"Could not find flat payment. {root}")
+    try:
+        root = bisect(objective_func, **kwargs)
+    except RootNotFound as e:
+        raise ValueError(f"Could not find flat payment.") from e
 
     return root.value
