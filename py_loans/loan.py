@@ -15,7 +15,6 @@ is different from expected.
 """
 
 from __future__ import annotations
-from collections import Counter
 from typing import Any, Iterator
 
 from pydantic_core.core_schema import FieldValidationInfo
@@ -90,6 +89,6 @@ def find_flat_payment(
     try:
         root = bisect(objective_func, **kwargs)
     except RootNotFound as e:
-        raise ValueError(f"Could not find flat payment.") from e
+        raise ValueError("Could not find flat payment.") from e
 
     return root.value
