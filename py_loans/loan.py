@@ -1,19 +1,3 @@
-"""
-
-| Year | Starting Loan | Interest | Payment | Ending Loan |
-|------|---------------|----------|---------|-------------|
-|     0|            100|         5|        7|           98|
-|     1|             98|         5|        7|           96|
-
-Whatever the interest rate process is believed to be at the outset of the
-loan, this will change after the fixed interest period because the variable
-interest rate is random.
-
-Recalculate the flat payment every time the interest rate process experience
-is different from expected.
-
-"""
-
 from __future__ import annotations
 from typing import Iterator
 
@@ -26,6 +10,37 @@ from py_loans.roots import bisect
 
 
 class LoanPeriod(BaseModel):
+    """A single time step in a loan repayment schedule.
+
+    Attributes:
+        time_step: Time index this step corresponds to.
+        start_value: Loan amount at the beginning of the period.
+        interest: Interest payable on the loan this period.
+        payment: Payment made for this period. Greater than or equal to the interest.
+        end_value: Loan amount at the end of this period.
+
+    Examples:
+
+        >>> lp = LoanPeriod(
+        ... time_step=0,
+        ... start_value=100,
+        ... interest=5,
+        ... payment=7,
+        ... )
+        >>> lp.end_value
+        98.0
+        >>> lp = LoanPeriod(
+        ... time_step=0,
+        ... start_value=100,
+        ... interest=5,
+        ... payment=4,
+        ... )
+        >>> lp.payment
+        5.0
+
+
+    """
+
     time_step: NonNegativeInt
     start_value: float
     interest: float
@@ -45,11 +60,36 @@ class LoanPeriod(BaseModel):
 
 def loan(
     start_value: NonNegativeFloat,
-    interest_rate_process: Process,
-    payment_process: Process,
+    interest_rate_process: Process | float,
+    payment_process: Process | float,
     time_step: NonNegativeInt = 0,
     repayment_period: NonNegativeInt = 25,
 ) -> Iterator[LoanPeriod]:
+    """Generate loan repayments until the term of the loan.
+
+    Arguments:
+        start_value: Loan amount at the outset.
+        interest_rate_process: Process governing the interest rate at each time step.
+        payment_process: Process governing the payments at each time step.
+        time_step: Begining time step.
+        repayment_period: Number of time steps until the loan matures.
+
+    Examples:
+
+        >>> repayment_process = loan(
+        ... start_value=100,
+        ... interest_rate_process=0.05,
+        ... payment_process=7,
+        ... )
+        >>> next(repayment_process)
+        LoanPeriod(time_step=0, start_value=100.0, interest=5.0, payment=7.0)
+    """
+
+    if isinstance(interest_rate_process, (int, float)):
+        interest_rate_process = ConstantValue(value=interest_rate_process)
+    if isinstance(payment_process, (int, float)):
+        payment_process = ConstantValue(value=payment_process)
+
     while True:
         month = LoanPeriod(
             time_step=time_step,
@@ -68,11 +108,41 @@ def loan(
 
 def find_flat_payment(
     start_value: NonNegativeFloat,
-    interest_rate_process: Process,
+    interest_rate_process: Process | float,
     time_step: NonNegativeInt = 0,
     repayment_period: NonNegativeInt = 25,
     tol: float = 5,
 ) -> float:
+    """Find the flat payment such that a loan is paid off at maturity.
+
+    Arguments:
+        start_value: Loan amount at the outset.
+        interest_rate_process: Process governing the interest rate at each time step.
+        time_step: Begining time step.
+        repayment_period: Number of time steps until the loan matures.
+        tol: Tolerance within which the root finding algorithm has converged.
+
+    Examples:
+
+        >>> payment = find_flat_payment(
+        ... start_value=100,
+        ... interest_rate_process=0.0,
+        ... repayment_period=25,
+        ... tol=0.01,
+        ... )
+        >>> round(payment, 2)
+        4.0
+        >>> payment = find_flat_payment(
+        ... start_value=100,
+        ... interest_rate_process=0.05,
+        ... repayment_period=25,
+        ... tol=0.01,
+        ... )
+        >>> round(payment, 2)
+        7.1
+
+    """
+
     def objective_func(flat_payment: float) -> float:
         loan_gen = loan(
             start_value=start_value,
