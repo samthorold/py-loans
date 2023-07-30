@@ -58,6 +58,34 @@ class LoanPeriod(BaseModel):
         return self.start_value + self.interest - self.payment
 
 
+def convert_rate(
+    rate: float,
+    from_period: float = 1.0,
+    to_period: float = 12,
+) -> float:
+    """Convert an interest rate over one period to an equivalent rate over another period.
+
+    `(1 + j)**to_period == (1 + i)**from_period`
+
+    `j == (1 + i)**(from_period/to_period) - 1`
+
+    Arguments:
+        rate: Rate to convert.
+        from_period: Number of times the rate compounds.
+        to_period: Number of times the equivalent rate compounds.
+
+    Examples:
+        >>> rate = convert_rate(0.05, 1, 12)
+        >>> round(rate, 4)
+        0.0041
+        >>> rate = convert_rate(rate, 12, 1)
+        >>> round(rate, 12)
+        0.05
+
+    """
+    return float((1 + rate) ** (from_period / to_period) - 1)
+
+
 def loan(
     start_value: NonNegativeFloat,
     interest_rate_process: Process | float,
