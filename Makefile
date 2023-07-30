@@ -23,4 +23,7 @@ fmt-check:
 	poetry run black --preview --check py_loans tests
 	poetry run flake8 py_loans tests
 
-check: fmt-check type-check
+docs-build:
+	poetry run mkdocs build
+
+check: fmt-check type-check docs-build
