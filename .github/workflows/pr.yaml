@@ -21,5 +21,6 @@ jobs:
       - run: curl -sSL https://install.python-poetry.org | python3 - --version 1.5.1
       - run: poetry install
       - run: make fmt-check
+      - run: make docs-build
       - run: make type-check
       - run: make test-coverage

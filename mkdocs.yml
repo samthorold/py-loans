@@ -1,0 +1,12 @@
+site_name: Py Loans
+
+theme:
+  name: material
+
+watch:
+  - py_loans
+  - tests
+
+plugins:
+  - mkdocstrings
+  - search
