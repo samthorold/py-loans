@@ -35,7 +35,7 @@ def bisect(
     a: float,
     b: float,
     tol: float,
-    max_iterations: int = 20,
+    max_iterations: int = 50,
 ) -> Root:
     """Bisection root-finding algorithm.
 

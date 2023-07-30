@@ -139,8 +139,8 @@ def loan(
 def find_flat_payment(
     start_value: NonNegativeFloat,
     interest_rate_process: Process | float,
+    repayment_period: NonNegativeInt,
     time_step: NonNegativeInt = 0,
-    repayment_period: NonNegativeInt = 25,
     tol: float = 5,
 ) -> float:
     """Find the flat payment such that a loan is paid off at maturity.
@@ -148,8 +148,8 @@ def find_flat_payment(
     Arguments:
         start_value: Loan amount at the outset.
         interest_rate_process: Process governing the interest rate at each time step.
-        time_step: Begining time step.
         repayment_period: Number of time steps until the loan matures.
+        time_step: Begining time step.
         tol: Tolerance within which the root finding algorithm has converged.
 
     Examples:
