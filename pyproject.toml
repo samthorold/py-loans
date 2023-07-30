@@ -16,6 +16,8 @@ pytest-cov = "^4.1.0"
 rich = { extras = ["all"], version = "^13.4.2" }
 flake8 = "^6.0.0"
 flake8-pyproject = "^1.2.3"
+mkdocstrings = {extras = ["python"], version = "^0.22.0"}
+mkdocs-material = "^9.1.21"
 
 [build-system]
 requires = ["poetry-core"]
