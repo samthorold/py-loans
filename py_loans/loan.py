@@ -83,6 +83,8 @@ def loan(
         ... )
         >>> next(repayment_process)
         LoanPeriod(time_step=0, start_value=100.0, interest=5.0, payment=7.0)
+        >>> next(repayment_process)
+        LoanPeriod(time_step=1, start_value=98.0, interest=4.9, payment=7.0)
     """
 
     if isinstance(interest_rate_process, (int, float)):
