@@ -3,7 +3,13 @@ from typing import Iterator
 
 from pydantic_core.core_schema import FieldValidationInfo
 
-from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, field_validator
+from pydantic import (
+    BaseModel,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PositiveInt,
+    field_validator,
+)
 
 from py_loans.process import ConstantValue, Process
 from py_loans.roots import bisect
@@ -58,10 +64,25 @@ class LoanPeriod(BaseModel):
         return self.start_value + self.interest - self.payment
 
 
+class LoanTerm(BaseModel):
+    """Description of a period of a loan with a fixed interest rate.
+
+    Attributes:
+        rate: Interest rate.
+        term: Length in periods of the LoanTerm.
+        to_period: How many times a year the rate compounds.
+        simple: Does the rate get converted using a simple or equivalent rate?
+    """
+
+    rate: float
+    term: PositiveInt
+    from_period: PositiveInt = 1
+    to_period: PositiveInt = 12
+    simple: bool = True
+
+
 def convert_rate(
-    rate: float,
-    from_period: float = 1.0,
-    to_period: float = 12,
+    rate: float, from_period: float = 1.0, to_period: float = 12, simple: bool = True
 ) -> float:
     """Convert an interest rate over one period to an equivalent rate over another period.
 
@@ -75,14 +96,16 @@ def convert_rate(
         to_period: Number of times the equivalent rate compounds.
 
     Examples:
-        >>> rate = convert_rate(0.05, 1, 12)
+        >>> rate = convert_rate(0.05, 1, 12, simple=False)
         >>> round(rate, 4)
         0.0041
-        >>> rate = convert_rate(rate, 12, 1)
+        >>> rate = convert_rate(rate, 12, 1, simple=False)
         >>> round(rate, 12)
         0.05
 
     """
+    if simple:
+        return rate * from_period / to_period
     return float((1 + rate) ** (from_period / to_period) - 1)
 
 
@@ -139,17 +162,17 @@ def loan(
 def find_flat_payment(
     start_value: NonNegativeFloat,
     interest_rate_process: Process | float,
+    repayment_period: NonNegativeInt,
     time_step: NonNegativeInt = 0,
-    repayment_period: NonNegativeInt = 25,
-    tol: float = 5,
+    tol: float = 1e-5,
 ) -> float:
     """Find the flat payment such that a loan is paid off at maturity.
 
     Arguments:
         start_value: Loan amount at the outset.
         interest_rate_process: Process governing the interest rate at each time step.
-        time_step: Begining time step.
         repayment_period: Number of time steps until the loan matures.
+        time_step: Begining time step.
         tol: Tolerance within which the root finding algorithm has converged.
 
     Examples:
@@ -190,3 +213,74 @@ def find_flat_payment(
         raise ValueError(f"Could not find payment. {root}")
 
     return root.value
+
+
+def illustrative_mortgage(
+    start_value: NonNegativeFloat,
+    loan_terms: list[LoanTerm],
+    repayment_period: PositiveInt = 300,
+) -> list[LoanPeriod]:
+    """
+
+    Examples:
+        >>> start_value = 240_000
+        >>> repayment_period = 300
+        >>> loan_terms = [
+        ...     LoanTerm(rate=0.0519, term=24),
+        ...     LoanTerm(rate=0.0779, term=1),
+        ... ]
+        >>> loan_periods = illustrative_mortgage(
+        ...     start_value=start_value,
+        ...     loan_terms=loan_terms,
+        ...     repayment_period=repayment_period,
+        ... )
+        >>> len(loan_periods)
+        300
+        >>> round(loan_periods[0].payment, 2)
+        1429.71
+        >>> round(loan_periods[24].payment, 2)
+        1794.71
+        >>> round(sum(lp.payment for lp in loan_periods))
+        529653
+    """
+    if not loan_terms:
+        raise ValueError("Must provide at least one loan term.")
+
+    time_step = 0
+    loan_periods: list[LoanPeriod] = []
+
+    for lidx, loan_term in enumerate(loan_terms):
+        term_rate = convert_rate(
+            rate=loan_term.rate,
+            from_period=loan_term.from_period,
+            to_period=loan_term.to_period,
+            simple=loan_term.simple,
+        )
+
+        # find the start value of the current period
+        if lidx:
+            time_step = sum(lt.term for lt in loan_terms[:lidx])
+            start_value = loan_periods[time_step - 1].end_value
+            loan_periods = loan_periods[:time_step]
+
+        # find the flat payment assuming the new interest rate for the
+        # remainder of the loan
+        payment = find_flat_payment(
+            start_value=start_value,
+            interest_rate_process=term_rate,
+            time_step=time_step,
+            repayment_period=repayment_period,
+            tol=1e-5,
+        )
+
+        loan_periods += list(
+            loan(
+                start_value=start_value,
+                interest_rate_process=term_rate,
+                payment_process=payment,
+                time_step=time_step,
+                repayment_period=repayment_period,
+            )
+        )
+
+    return loan_periods

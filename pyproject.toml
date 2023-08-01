@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "py_loan"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Sam Thorold <sam.thorold@gmail.com>"]
 readme = "README.md"
@@ -16,7 +16,7 @@ pytest-cov = "^4.1.0"
 rich = { extras = ["all"], version = "^13.4.2" }
 flake8 = "^6.0.0"
 flake8-pyproject = "^1.2.3"
-mkdocstrings = {extras = ["python"], version = "^0.22.0"}
+mkdocstrings = { extras = ["python"], version = "^0.22.0" }
 mkdocs-material = "^9.1.21"
 
 [build-system]
@@ -52,4 +52,4 @@ exclude_lines = [
 strict = true
 
 [tool.flake8]
-max-line-length = 100
+max-line-length = 1000
