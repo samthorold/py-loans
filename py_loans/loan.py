@@ -75,6 +75,16 @@ class RepaymentSchedule(BaseModel):
     def __getitem__(self, i: int) -> RepaymentPeriod:
         return self.periods[i]
 
+    @computed_field  # type: ignore[misc]
+    @property
+    def interest(self) -> float:
+        return sum(rp.interest for rp in self.periods)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def total(self) -> float:
+        return sum(rp.payment for rp in self.periods)
+
 
 class LoanTerm(BaseModel):
     """Description of a period of a loan with a fixed interest rate.
