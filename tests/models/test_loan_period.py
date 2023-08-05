@@ -1,6 +1,6 @@
 import pytest
 
-from py_loans.loan import LoanPeriod
+from py_loans.loan import RepaymentPeriod
 
 
 def test_loan_period_end_value() -> None:
@@ -10,7 +10,7 @@ def test_loan_period_end_value() -> None:
 
     expected = start_value + interest - payment
 
-    loan_period = LoanPeriod(
+    loan_period = RepaymentPeriod(
         time_step=0, start_value=start_value, interest=interest, payment=payment
     )
 
@@ -30,7 +30,7 @@ def test_loan_period_end_value() -> None:
 def test_loan_period_payment(
     start_value: float, interest: float, payment: float, expected: float
 ) -> None:
-    loan_period = LoanPeriod(
+    loan_period = RepaymentPeriod(
         time_step=0, start_value=start_value, interest=interest, payment=payment
     )
     assert loan_period.payment == expected, loan_period

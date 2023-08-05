@@ -1,9 +1,12 @@
 [tool.poetry]
 name = "py_loan"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 authors = ["Sam Thorold <sam.thorold@gmail.com>"]
 readme = "README.md"
+
+[tool.poetry.scripts]
+py_loans = "py_loans.cli"
 
 [tool.poetry.dependencies]
 python = "^3.11"
