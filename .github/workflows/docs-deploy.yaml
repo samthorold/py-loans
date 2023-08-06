@@ -1,0 +1,27 @@
+---
+name: Deploy docs
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  docs:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: python3.11
+
+      - name: "Install dependencies"
+        run: |
+          python -m site
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install mkdocstrings[python] mkdocs-material
+          python -m pip install .
+      - name: "Deploy docs"
+        run: "python -m mkdocs gh-deploy --force"  # https://squidfunk.github.io/mkdocs-material/publishing-your-site/
