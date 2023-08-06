@@ -29,18 +29,18 @@ class RepaymentPeriod(BaseModel):
     Examples:
 
         >>> lp = RepaymentPeriod(
-        ... time_step=0,
-        ... start_value=100,
-        ... interest=5,
-        ... payment=7,
+        ...     time_step=0,
+        ...     start_value=100,
+        ...     interest=5,
+        ...     payment=7,
         ... )
         >>> lp.end_value
         98.0
         >>> lp = RepaymentPeriod(
-        ... time_step=0,
-        ... start_value=100,
-        ... interest=5,
-        ... payment=4,
+        ...     time_step=0,
+        ...     start_value=100,
+        ...     interest=5,
+        ...     payment=4,
         ... )
         >>> lp.payment
         5.0
@@ -238,6 +238,17 @@ def find_flat_payment(
 
 
 class IllustrativeMortgage(BaseModel):
+    """Illustrative mortgage repayment schedule.
+
+    Assumes constant payments and interest rates over a series of time periods.
+
+    Attributes:
+        start_value: Loan amount at the outset.
+        loan_terms: The periods of constant payments and interest rates.
+        repayment_period: Number of time steps until the loan matures.
+
+    """
+
     start_value: NonNegativeFloat
     loan_terms: list[LoanTerm]
     repayment_period: PositiveInt = 300
