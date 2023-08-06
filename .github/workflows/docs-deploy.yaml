@@ -22,4 +22,4 @@ jobs:
           python-version: 3.11
       - run: curl -sSL https://install.python-poetry.org | python3 - --version 1.5.1
       - run: poetry install
-      - run: python -m mkdocs gh-deploy --force
+      - run: poetry run mkdocs gh-deploy --force
