@@ -4,7 +4,7 @@ from py_loans.process import ConstantValue
 
 
 @pytest.mark.parametrize(
-    "repayment_period,interest_rate,expected", ((25, 0.0, 400), (25, 0.05, 710))
+    "repayment_period,interest_rate,expected", ((25, 0.0, -400), (25, 0.05, -710))
 )
 def test_find_flat_payment(
     repayment_period: int, interest_rate: float, expected: float

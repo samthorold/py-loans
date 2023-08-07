@@ -61,7 +61,7 @@ def bisect(
     iteration = 0
     while iteration < max_iterations:
         c = (a + b) / 2
-        if ((b - a) / 2) < tol or abs(fc := f(c)) < tol:
+        if abs(fc := f(c)) < tol:
             return Root(value=c, iterations=iteration, converged=True, tol=tol)
 
         if _same_sign(f(a), fc):

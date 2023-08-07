@@ -31,7 +31,7 @@ class RepaymentPeriod(BaseModel):
         ...     time_step=0,
         ...     start_value=100,
         ...     interest=5,
-        ...     payment=7,
+        ...     payment=-7,
         ... )
         >>> lp.end_value
         98.0
@@ -39,10 +39,10 @@ class RepaymentPeriod(BaseModel):
         ...     time_step=0,
         ...     start_value=100,
         ...     interest=5,
-        ...     payment=4,
+        ...     payment=-4,
         ... )
         >>> lp.payment
-        5.0
+        -5.0
 
 
     """
@@ -55,12 +55,12 @@ class RepaymentPeriod(BaseModel):
     @field_validator("payment")
     def validate_payment_amount(cls, v: float, info: FieldValidationInfo) -> float:
         interest: float = info.data["interest"]
-        return max(v, interest)
+        return min(v, -interest)
 
     @computed_field  # type: ignore[misc]
     @property
     def end_value(self) -> float:
-        return self.start_value + self.interest - self.payment
+        return self.start_value + self.interest + self.payment
 
 
 class RepaymentSchedule(BaseModel):
@@ -149,12 +149,12 @@ def loan(
         >>> repayment_process = loan(
         ... start_value=100,
         ... interest_rate_process=0.05,
-        ... payment_process=7,
+        ... payment_process=-7,
         ... )
         >>> next(repayment_process)
-        RepaymentPeriod(time_step=0, start_value=100.0, interest=5.0, payment=7.0, end_value=98.0)
+        RepaymentPeriod(time_step=0, start_value=100.0, interest=5.0, payment=-7.0, end_value=98.0)
         >>> next(repayment_process)
-        RepaymentPeriod(time_step=1, start_value=98.0, interest=4.9, payment=7.0, end_value=95.9)
+        RepaymentPeriod(time_step=1, start_value=98.0, interest=4.9, payment=-7.0, end_value=95.9)
     """
 
     if isinstance(interest_rate_process, (int, float)):
@@ -203,7 +203,7 @@ def find_flat_payment(
         ... tol=0.01,
         ... )
         >>> round(payment, 2)
-        4.0
+        -4.0
         >>> payment = find_flat_payment(
         ... start_value=100,
         ... interest_rate_process=0.05,
@@ -211,7 +211,7 @@ def find_flat_payment(
         ... tol=0.01,
         ... )
         >>> round(payment, 2)
-        7.1
+        -7.1
 
     """
 
@@ -226,7 +226,7 @@ def find_flat_payment(
         repayment = list(loan_gen)
         return repayment[-1].end_value
 
-    root = bisect(objective_func, a=0, b=start_value, tol=tol)
+    root = bisect(objective_func, a=-start_value, b=0, tol=tol)
 
     if not root.converged:
         raise ValueError(f"Could not find payment. {root}")
