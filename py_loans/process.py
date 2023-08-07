@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
+from pydantic import BaseModel, NonNegativeInt
 
 
 class Process(Protocol):
@@ -34,7 +34,7 @@ class ConstantValue(BaseModel):
 
     """
 
-    value: NonNegativeFloat
+    value: float
 
     def step(self, t: NonNegativeInt) -> float:
         """Return the constant value."""

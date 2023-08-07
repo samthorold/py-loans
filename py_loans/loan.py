@@ -5,7 +5,6 @@ from pydantic_core.core_schema import FieldValidationInfo
 
 from pydantic import (
     BaseModel,
-    NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
     field_validator,
@@ -51,18 +50,16 @@ class RepaymentPeriod(BaseModel):
     time_step: NonNegativeInt
     start_value: float
     interest: float
-    payment: NonNegativeFloat
+    payment: float
 
     @field_validator("payment")
-    def validate_payment_amount(
-        cls, v: NonNegativeFloat, info: FieldValidationInfo
-    ) -> NonNegativeFloat:
-        interest: NonNegativeFloat = info.data["interest"]
+    def validate_payment_amount(cls, v: float, info: FieldValidationInfo) -> float:
+        interest: float = info.data["interest"]
         return max(v, interest)
 
     @computed_field  # type: ignore[misc]
     @property
-    def end_value(self) -> NonNegativeFloat:
+    def end_value(self) -> float:
         return self.start_value + self.interest - self.payment
 
 
@@ -132,7 +129,7 @@ def convert_rate(
 
 
 def loan(
-    start_value: NonNegativeFloat,
+    start_value: float,
     interest_rate_process: Process | float,
     payment_process: Process | float,
     time_step: NonNegativeInt = 0,
@@ -182,7 +179,7 @@ def loan(
 
 
 def find_flat_payment(
-    start_value: NonNegativeFloat,
+    start_value: float,
     interest_rate_process: Process | float,
     repayment_period: NonNegativeInt,
     time_step: NonNegativeInt = 0,
@@ -249,7 +246,7 @@ class IllustrativeMortgage(BaseModel):
 
     """
 
-    start_value: NonNegativeFloat
+    start_value: float
     loan_terms: list[LoanTerm]
     repayment_period: PositiveInt = 300
 
