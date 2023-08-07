@@ -30,3 +30,5 @@ watch-docs-build:
 	poetry run mkdocs serve -a localhost:8005
 
 check: fmt-check type-check docs-build
+
+check-all: check test-coverage
